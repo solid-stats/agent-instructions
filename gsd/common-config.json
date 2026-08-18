@@ -1,0 +1,41 @@
+{
+  "_comment": "Dotted-path keys, same convention gsd-core's federated-config.cjs uses for its schema keys. sync-gsd-config.mjs writes each key into the target repo's .planning/config.json at that exact path, leaving every other key untouched. Verified with a dry-run against all 5 platform repos, not just guessed from two samples: workflow.ui_phase/ui_safety_gate and code_quality.fallow.* were dropped after the dry-run showed they are deliberately false/absent in replays-fetcher, replay-parser-2 and infrastructure (no UI, or non-TS stack) — those are repo-type-specific, not universal. Per-repo overrides that stay local: workflow.ai_integration_phase, workflow.skip_discuss, workflow.use_worktrees, workflow.ui_phase, workflow.ui_safety_gate, workflow.ui_review, workflow.test_command, code_quality.fallow.*, project_code, agent_skills, and anything else absent from this file.",
+
+  "workflow.research": true,
+  "workflow.plan_check": true,
+  "workflow.verifier": true,
+  "workflow.nyquist_validation": true,
+  "workflow.auto_prune_state": false,
+  "workflow.auto_advance": false,
+  "workflow.node_repair": true,
+  "workflow.node_repair_budget": 2,
+  "workflow.text_mode": false,
+  "workflow.research_before_questions": true,
+  "workflow.discuss_mode": "assumptions",
+  "workflow.subagent_timeout": 1200000,
+  "workflow.inline_plan_threshold": 2,
+  "workflow.code_review": true,
+  "workflow.code_review_depth": "deep",
+  "workflow.security_enforcement": true,
+  "workflow.security_asvs_level": 2,
+  "workflow.security_block_on": "high",
+  "workflow.post_planning_gaps": true,
+  "workflow.plan_review_convergence": true,
+
+  "git.branching_strategy": "milestone",
+  "git.phase_branch_template": "gsd/phase-{phase}-{slug}",
+  "git.milestone_branch_template": "gsd/{milestone}-{slug}",
+
+  "hooks.context_warnings": true,
+  "hooks.workflow_guard": true,
+
+  "learnings.max_inject": 10,
+
+  "intel.enabled": true,
+
+  "parallelization": true,
+
+  "graphify.enabled": true,
+
+  "mempalace.enabled": true
+}

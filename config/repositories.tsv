@@ -1,0 +1,9 @@
+# repository	tier	gsd_config_sync
+solid-stats/server-2	platform	yes
+solid-stats/replays-fetcher	platform	yes
+solid-stats/replay-parser-2	platform	yes
+solid-stats/web	platform	yes
+solid-stats/infrastructure	platform	yes
+solid-stats/plans	supporting	no
+solid-stats/skills	supporting	no
+solid-stats/ts-toolchain	supporting	no
