@@ -62,16 +62,17 @@ if [ ! -f "$agents_target" ]; then
 elif ! grep -Fqx "$import_line" "$agents_target"; then
     tmp_file=$(mktemp)
     trap 'rm -f "$tmp_file"' EXIT HUP INT TERM
-    # Insert the import line right after the repo's own opening blockquote (the first line that
-    # is not a blockquote), so it reads: repo header, then the shared-contract import.
+    # Insert the import line right before the first standalone "---" separator (every observed
+    # repo header, blockquote-style or plain-paragraph, ends with one before "# AGENTS
+    # instructions"). If no separator exists, append at end of file instead.
     awk -v line="$import_line" '
-        !inserted && $0 !~ /^>/ && NF > 0 {
+        !inserted && $0 == "---" {
             print line
             print ""
             inserted = 1
         }
         { print }
-        END { if (!inserted) print line }
+        END { if (!inserted) { print ""; print line } }
     ' "$agents_target" > "$tmp_file"
     cp "$tmp_file" "$agents_target"
     echo "Added the import line to $agents_target."

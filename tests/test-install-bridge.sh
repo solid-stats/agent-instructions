@@ -30,12 +30,16 @@ pass "--check passes after a current install"
 # 3. Install into a repo with an existing AGENTS.md (repo-specific header preserved).
 tmp2=$(mktemp -d)
 trap 'rm -rf "$tmp" "$tmp2"' EXIT HUP INT TERM
-printf '> This repo does X.\n> Boundary: owns Y.\n\n# AGENTS instructions\n\nSome body.\n' > "$tmp2/AGENTS.md"
+printf '> This repo does X.\n> Boundary: owns Y.\n\n---\n\n# AGENTS instructions\n\nSome body.\n' > "$tmp2/AGENTS.md"
 
 sh "$bridge" --root "$tmp2" >/dev/null
 grep -Fqx '@.agent-instructions/AGENTS.md' "$tmp2/AGENTS.md" || fail "import line not added to existing AGENTS.md"
 grep -Fq 'This repo does X.' "$tmp2/AGENTS.md" || fail "existing repo-specific header was lost"
-pass "install into an existing AGENTS.md preserves the repo-specific header"
+# The import must land BEFORE the "---" separator, not after "# AGENTS instructions".
+import_line_no=$(grep -Fnx -- '@.agent-instructions/AGENTS.md' "$tmp2/AGENTS.md" | cut -d: -f1)
+separator_line_no=$(grep -Fnx -- '---' "$tmp2/AGENTS.md" | head -1 | cut -d: -f1)
+[ "$import_line_no" -lt "$separator_line_no" ] || fail "import line landed after the --- separator, not before it"
+pass "install into an existing AGENTS.md preserves the repo-specific header and places the import before ---"
 
 # 4. Idempotency — re-running does not duplicate the import line.
 sh "$bridge" --root "$tmp2" >/dev/null
