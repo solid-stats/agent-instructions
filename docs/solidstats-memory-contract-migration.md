@@ -231,6 +231,37 @@ Never store:
 - Exact disposable UAT records may be removed by exact drawer ID as part of
   their own verified test cleanup.
 
+## Post-cutover archive distillation
+
+Archive distillation is a separate post-cutover activity. It must not delay the
+runtime migration or weaken the frozen-archive boundary.
+
+- Process archive wings read-only in bounded repository-owned shards.
+- Use parallel low-cost extraction agents for candidate discovery only. They
+  must not recall from unrelated palaces, mutate drawers, or capture directly
+  into active memory.
+- Every candidate must contain:
+  - the exact archive wing and drawer ID;
+  - the proposed active room and owning active wing;
+  - a concise durable conclusion;
+  - exact legacy provenance;
+  - current primary sources needed for verification;
+  - a confidence level and the reason it may still be useful.
+- Candidate volume is not a success metric. Most legacy records may remain
+  unpromoted.
+- Deduplicate candidates against active memory and against other shards before
+  review.
+- A curator verifies every surviving candidate against current repository or
+  operational evidence. Only verified conclusions may be rewritten into the
+  active semantic record shape.
+- Promotion creates a new active semantic drawer. It never moves, rewrites, or
+  reclassifies the frozen archive drawer.
+- Reject personal data, secrets, stale temporary state, raw artifacts,
+  unsupported conclusions, and facts whose current source cannot be verified.
+- Record shard coverage, candidate counts, rejection reasons, promotions, and
+  verification sources so the distillation can resume without rescanning
+  completed shards.
+
 ## GSD integration requirements
 
 The shared GSD layer must enforce or audit these values across every consumer
@@ -274,6 +305,8 @@ surfaces atomically:
    `solidstats_memory`, with a dedicated token;
 7. recall/capture UAT against the resulting
    `mcp__solidstats_memory__*` tool surface.
+8. a separate post-cutover archive-distillation phase with read-only extraction
+   agents and curator-owned promotion.
 
 Do not switch the shared contract before the new endpoint is deployable and
 verified. Do not leave the old and new MCP names active together after cutover.
@@ -297,6 +330,8 @@ verified. Do not leave the old and new MCP names active together after cutover.
 - Every consumer repository receives the same enforced GSD lifecycle.
 - The old palace remains recoverable offline until post-cutover acceptance and
   rollback expiry are explicitly approved.
+- Archive distillation can run incrementally without granting extraction agents
+  write access or changing frozen archive drawers.
 
 ## Reference sources
 
