@@ -66,8 +66,7 @@ jobs:
 
             git checkout -b "$branch"
 
-            mkdir -p .agent-instructions
-            cp "$GITHUB_WORKSPACE/shared/AGENTS.md" .agent-instructions/AGENTS.md
+            sh "$GITHUB_WORKSPACE/scripts/install-bridge.sh" --root .
 
             if [ "$gsd_sync" = "yes" ] && [ -f .planning/config.json ]; then
               node "$GITHUB_WORKSPACE/scripts/sync-gsd-config.mjs" .

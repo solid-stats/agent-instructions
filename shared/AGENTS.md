@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 MD041 -->
 <!-- Managed by solid-stats/agent-instructions. Do not hand-edit in a consumer repo — changes
      are overwritten by the next sync PR. Edit the source at
      https://github.com/solid-stats/agent-instructions/blob/master/shared/AGENTS.md instead. -->
@@ -22,7 +23,7 @@ Every completed work session must leave the repository in a clean, committed sta
 
 All commits in every SolidStats repo follow **Conventional Commits**:
 
-```
+```text
 <type>(<scope>): <short description>
 ```
 
