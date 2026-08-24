@@ -2,12 +2,13 @@
 
 ## Status
 
-The canonical contract bundle is implemented in this repository. Consumer
-rollout remains gated on the infrastructure Phase 21.1 client update that
-exposes `mempalace_update_drawer` through `solidstats_memory`.
+The canonical contract bundle is implemented and contract `1.1.0` is published
+on `master` in every consumer repository. The user explicitly authorized this
+rollout before the infrastructure Phase 21.1 acceptance gate because no product
+work will occur before v4 completes.
 
-Do not run the consumer batch merely because this repository is released. Run
-the acceptance sequence below first.
+Phase 21.1 client-surface verification, the approved drawer correction, and
+contract UAT remain pending. Do not treat publication as acceptance.
 
 ## Canonical sources
 
@@ -60,46 +61,58 @@ operations. Then execute the already approved correction exactly once:
 Re-fetch that exact drawer and verify the approved fields after mutation. Any
 different ID or mutation requires new approval.
 
-## Local rollout
+## Published rollout
 
-The batch script preflights every consumer checkout before its first write. A
-missing, dirty, untracked, ahead, behind, or diverged checkout blocks the whole
-batch.
+The rollout was published and verified at these revisions:
+
+- `server-2`: `9915439` through PR #40;
+- `replays-fetcher`: `708fefc`;
+- `replay-parser-2`: `3dfa341`;
+- `web`: `83ed89a`;
+- `infrastructure`: `4553ded`;
+- `plans`: `b6aa733`;
+- `skills`: `92aa052`;
+- `ts-toolchain`: `72545c6`.
+
+`infrastructure` was updated from an isolated worktree based on `origin/master`.
+The active `gsd/v4.0-solidstats-memory-isolation` checkout and its untracked
+Phase 21.1 evidence files were not changed.
+
+The final fail-closed check passed across all eight published masters:
 
 ```sh
-sh scripts/sync-consumers.sh --workspace-root ..
+sh scripts/sync-consumers.sh --workspace-root <clean-verification-workspace> --check
 ```
 
-The script updates managed files only. Review each repository diff, run its
-applicable checks, then commit and push using that repository's route:
-
-- `server-2`: branch and pull request;
-- active GSD milestone: its configured milestone branch flow;
-- every other consumer: direct `master` push.
-
-After all eight consumer commits are published, verify the same version and
-content everywhere:
-
-```sh
-sh scripts/sync-consumers.sh --workspace-root .. --check
-```
+`server-2` Verify, contract diff, golden oracle, and master image build passed.
+The other available rollout CI checks passed except `web`, whose workflow still
+fails during dependency installation on the pre-existing
+`ERR_PNPM_IGNORED_BUILDS` gate before project checks begin.
 
 ## Acceptance
 
-Acceptance requires all of the following:
+Acceptance still requires all of the following. Publication items are complete;
+runtime and UAT items remain pending:
 
-1. Phase 21.1 client-surface checks pass.
-2. The exact approved drawer correction is read back successfully.
-3. Recall UAT searches all five active wings with the contract budgets and
-   fetches relevant drawers before use.
-4. Capture UAT writes one semantic drawer to a unique `uat-<nonce>` room,
-   verifies it, and deletes it by exact ID.
-5. No UAT drawer remains.
-6. Every consumer carries contract `1.1.0`, the thin root bridge, and exact
-   companion files.
-7. Every platform GSD config contains the fail-closed native MemPalace block
-   and its manifest-owned role wing.
-8. Consumer changes are committed and published through the correct Git route.
+1. **Pending:** Phase 21.1 client-surface checks pass.
+2. **Pending:** The exact approved drawer correction is read back successfully.
+3. **Pending:** Recall UAT searches all five active wings with the contract
+   budgets and fetches relevant drawers before use.
+4. **Pending:** Capture UAT writes one semantic drawer to a unique
+   `uat-<nonce>` room, verifies it, and deletes it by exact ID.
+5. **Pending:** No UAT drawer remains.
+6. **Complete:** Every consumer carries contract `1.1.0`, the thin root bridge,
+   and exact companion files.
+7. **Complete:** Every platform GSD config contains the fail-closed native
+   MemPalace block and its manifest-owned role wing.
+8. **Complete:** Consumer changes are committed and published through the
+   correct Git route.
+
+## Cleanup after acceptance
+
+Delete this handoff in the acceptance-closing commit after every pending item
+above is complete. Its exact gate, correction, and UAT instructions are still
+needed until then.
 
 Archive distillation and any personal-data audit are separate post-cutover
 work. They must not mutate archive drawers or delay this contract acceptance.
