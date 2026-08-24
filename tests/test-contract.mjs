@@ -95,6 +95,51 @@ for (const key of [
 assert(common["mempalace.memory_mode"] === "augment", "memory mode must remain augment");
 assert(!("mempalace.wing" in common), "repository-specific wing leaked into common config");
 
+const autonomousBaseline = new Map([
+  ["runtime", "codex"],
+  ["mode", "yolo"],
+  ["model_profile", "adaptive"],
+  ["granularity", "standard"],
+  ["context_window", 400000],
+  ["parallelization", true],
+  ["workflow.research_before_questions", false],
+  ["workflow.skip_discuss", false],
+  ["workflow.use_worktrees", true],
+  ["workflow.inline_plan_threshold", 3],
+  ["workflow.code_review_depth", "standard"],
+  ["dynamic_routing.enabled", true],
+  ["dynamic_routing.escalate_on_failure", true],
+  ["dynamic_routing.max_escalations", 1],
+  ["dynamic_routing.tier_models.light", "haiku"],
+  ["dynamic_routing.tier_models.standard", "sonnet"],
+  ["dynamic_routing.tier_models.heavy", "opus"],
+  ["effort.default", "medium"],
+  ["effort.routing_tier_defaults.light", "medium"],
+  ["effort.routing_tier_defaults.standard", "medium"],
+  ["effort.routing_tier_defaults.heavy", "medium"],
+  ["effort.agent_overrides.gsd-executor", "medium"],
+  ["effort.agent_overrides.gsd-planner", "medium"],
+  ["effort.agent_overrides.gsd-plan-checker", "medium"],
+  ["effort.agent_overrides.gsd-code-reviewer", "medium"],
+  ["effort.agent_overrides.gsd-verifier", "medium"],
+  ["effort.agent_overrides.gsd-security-auditor", "high"],
+  ["model_overrides.gsd-plan-checker", "gpt-5.6-terra"],
+  ["model_overrides.gsd-code-reviewer", "gpt-5.6-sol"],
+  ["model_overrides.gsd-verifier", "gpt-5.6-sol"],
+]);
+for (const [key, value] of autonomousBaseline) {
+  assert(common[key] === value, `unexpected autonomous baseline for ${key}`);
+}
+
+for (const policyText of [
+  "Autonomous GSD Policy",
+  "--granularity coarse",
+  "use `standard` whenever any condition is false or uncertain",
+  "--depth deep",
+]) {
+  assert(sharedAgents.includes(policyText), `shared AGENTS.md is missing ${policyText}`);
+}
+
 const memory = readFileSync(join(repoRoot, "shared", "MEMORY.md"), "utf8");
 for (const room of ["decisions", "contracts", "conventions", "operations", "incidents", "migrations"]) {
   assert(memory.includes(`\`${room}\``), `MEMORY.md does not declare ${room}`);

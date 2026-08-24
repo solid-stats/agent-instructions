@@ -11,6 +11,24 @@ operational impact level:
 
 Impact: `routine`
 
+## 1.2.0 - 2026-08-25
+
+Impact: `important`
+
+- Standardize SolidStats GSD projects on the Codex autonomous performance
+  baseline: YOLO mode, standard granularity, the effective 400K context
+  window, parallel worktrees, and bounded dynamic model escalation.
+- Route mapping and exploration to GPT-5.6 Luna Medium, plan execution and
+  plan checks to GPT-5.6 Terra Medium, and phase-wide review and verification
+  to GPT-5.6 Sol Medium.
+- Remove redundant research-before-questions work, inline plans with up to
+  three tasks, and use standard code-review depth by default.
+- Let the autonomous coordinator choose coarse planning only for an obviously
+  simple, low-risk phase and default to standard whenever classification is
+  uncertain.
+- Keep Smart Discuss autonomous and non-interactive instead of globally
+  discarding phase context.
+
 ## 1.1.0 - 2026-08-25
 
 Impact: `important`
