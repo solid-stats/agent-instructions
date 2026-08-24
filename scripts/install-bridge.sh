@@ -111,22 +111,41 @@ archive_wing=$(printf '%s\n' "$manifest_row" | cut -f5)
 case "$memory_wing" in *[!a-z0-9-]*|'') echo "Invalid memory wing: $memory_wing" >&2; exit 2;; esac
 case "$archive_wing" in *[!a-z0-9-]*|'') echo "Invalid archive wing: $archive_wing" >&2; exit 2;; esac
 
-if [ "$root_real" = "$contract_root" ]; then
-    version_path='CONTRACT_VERSION'
-    memory_path='shared/MEMORY.md'
-    gsd_path='shared/GSD.md'
-    version_target=$shared_version
-    memory_target=$shared_memory
-    gsd_target=$shared_gsd
-else
-    companion_dir="$root/.agent-instructions/solidstats"
-    version_path='.agent-instructions/solidstats/CONTRACT_VERSION'
-    memory_path='.agent-instructions/solidstats/MEMORY.md'
-    gsd_path='.agent-instructions/solidstats/GSD.md'
-    version_target="$companion_dir/CONTRACT_VERSION"
-    memory_target="$companion_dir/MEMORY.md"
-    gsd_target="$companion_dir/GSD.md"
+if [ "$repository" = 'solid-stats/agent-instructions' ]; then
+    [ "$root_real" = "$contract_root" ] || {
+        echo 'The canonical repository identity cannot target another checkout.' >&2
+        exit 2
+    }
+    [ -f "$root/AGENTS.md" ] || {
+        echo 'Canonical AGENTS.md is missing.' >&2
+        exit 2
+    }
+    if grep -F "$begin_marker" "$root/AGENTS.md" >/dev/null \
+        || grep -F "$end_marker" "$root/AGENTS.md" >/dev/null; then
+        echo 'Canonical AGENTS.md must not contain a generated consumer block.' >&2
+        exit 1
+    fi
+    for canonical_pointer in \
+        'shared/AGENTS.md' \
+        'shared/MEMORY.md' \
+        'shared/GSD.md' \
+        'CONTRACT_VERSION'; do
+        grep -F "$canonical_pointer" "$root/AGENTS.md" >/dev/null || {
+            echo "Canonical AGENTS.md is missing pointer: $canonical_pointer" >&2
+            exit 1
+        }
+    done
+    echo 'Canonical source repository does not self-materialize.'
+    exit 0
 fi
+
+companion_dir="$root/.agent-instructions/solidstats"
+version_path='.agent-instructions/solidstats/CONTRACT_VERSION'
+memory_path='.agent-instructions/solidstats/MEMORY.md'
+gsd_path='.agent-instructions/solidstats/GSD.md'
+version_target="$companion_dir/CONTRACT_VERSION"
+memory_target="$companion_dir/MEMORY.md"
+gsd_target="$companion_dir/GSD.md"
 
 agents_target="$root/AGENTS.md"
 legacy_dir="$root/.agent-instructions"
@@ -214,20 +233,18 @@ if [ "$mode" = 'dry-run' ]; then
     exit 0
 fi
 
-if [ "$root_real" != "$contract_root" ]; then
-    mkdir -p "$companion_dir"
-    for source_target in \
-        "$shared_version:$version_target" \
-        "$shared_memory:$memory_target" \
-        "$shared_gsd:$gsd_target"; do
-        source=${source_target%%:*}
-        target=${source_target#*:}
-        target_tmp=$(mktemp "$companion_dir/.install-bridge.XXXXXX")
-        cp "$source" "$target_tmp"
-        chmod 644 "$target_tmp"
-        mv "$target_tmp" "$target"
-    done
-fi
+mkdir -p "$companion_dir"
+for source_target in \
+    "$shared_version:$version_target" \
+    "$shared_memory:$memory_target" \
+    "$shared_gsd:$gsd_target"; do
+    source=${source_target%%:*}
+    target=${source_target#*:}
+    target_tmp=$(mktemp "$companion_dir/.install-bridge.XXXXXX")
+    cp "$source" "$target_tmp"
+    chmod 644 "$target_tmp"
+    mv "$target_tmp" "$target"
+done
 
 target_tmp=$(mktemp "$root/.AGENTS.md.install-bridge.XXXXXX")
 trap 'rm -f "$local_content" "$rendered_shared" "$new_agents" "$target_tmp"' EXIT HUP INT TERM

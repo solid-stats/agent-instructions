@@ -57,6 +57,11 @@ assert_companions() {
 sh -n "$bridge" || fail "install-bridge.sh has a syntax error"
 pass "install-bridge.sh parses"
 
+# The canonical source repo is validated without self-materialization.
+sh "$bridge" --root "$repo_root" --repository solid-stats/agent-instructions --check >/dev/null \
+    || fail "canonical source repository validation failed"
+pass "canonical source repository does not self-materialize"
+
 # 2. Fresh install into a repo with no AGENTS.md.
 sh "$bridge" --root "$tmp" --repository solid-stats/web >/dev/null
 [ -f "$tmp/AGENTS.md" ] || fail "AGENTS.md not created"

@@ -14,6 +14,10 @@ This is a supporting repository: it owns no runtime boundary. It supplies a
 versioned contract that consumers embed into their root instructions and
 managed companion files.
 
+The canonical repository does not materialize that contract back into its own
+`AGENTS.md`: its root file contains only a bootstrap to `shared/*` and local
+maintenance rules.
+
 ## What lives here
 
 - [`shared/AGENTS.md`](shared/AGENTS.md) — the source copied into a managed

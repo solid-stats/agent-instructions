@@ -12,6 +12,20 @@ function assert(condition, message) {
 const version = readFileSync(join(repoRoot, "CONTRACT_VERSION"), "utf8").trim();
 assert(/^\d+\.\d+\.\d+$/u.test(version), "CONTRACT_VERSION must be SemVer");
 
+const rootAgents = readFileSync(join(repoRoot, "AGENTS.md"), "utf8");
+assert(
+  !rootAgents.includes("<!-- BEGIN managed by solid-stats/agent-instructions -->"),
+  "canonical AGENTS.md must not self-materialize the consumer block",
+);
+for (const pointer of [
+  "shared/AGENTS.md",
+  "shared/MEMORY.md",
+  "shared/GSD.md",
+  "CONTRACT_VERSION",
+]) {
+  assert(rootAgents.includes(pointer), `canonical AGENTS.md is missing ${pointer}`);
+}
+
 const manifestLines = readFileSync(join(repoRoot, "config", "repositories.tsv"), "utf8")
   .trimEnd()
   .split(/\r?\n/u);

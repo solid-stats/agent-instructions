@@ -7,6 +7,13 @@ operational impact level:
 - `important`: behavior changes that require consumer review;
 - `system`: coordinated routing, runtime, or multi-repository cutover.
 
+## Unreleased
+
+Impact: `routine`
+
+- Stop self-materializing the shared consumer block into the canonical
+  repository's root `AGENTS.md`.
+
 ## 1.0.0 - 2026-08-25
 
 Impact: `system`
