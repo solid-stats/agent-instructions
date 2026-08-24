@@ -21,6 +21,8 @@ Impact: `important`
   companion `AGENTS.md`.
 - Make the four-file companion bundle fail-closed without adding a task-start
   remote update check or a second version number.
+- Preserve the existing consumer `AGENTS.md` line-length lint scope while
+  replacing the embedded block.
 
 ## 1.0.0 - 2026-08-25
 
