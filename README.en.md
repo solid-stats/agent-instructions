@@ -11,8 +11,8 @@ paragraph was identical in `web`, `server-2`, `replays-fetcher`, and
 `solidstats-shared-project-standards` skill, which is not always loaded.
 
 This is a supporting repository: it owns no runtime boundary. It supplies a
-versioned contract that consumers embed into their root instructions and
-managed companion files.
+thin root bridge and a versioned contract committed as managed companion files
+in every consumer.
 
 The canonical repository does not materialize that contract back into its own
 `AGENTS.md`: its root file contains only a bootstrap to `shared/*` and local
@@ -20,8 +20,10 @@ maintenance rules.
 
 ## What lives here
 
-- [`shared/AGENTS.md`](shared/AGENTS.md) — the source copied into a managed
-  block at the start of every consumer's root `AGENTS.md`.
+- [`templates/AGENTS.bridge.md`](templates/AGENTS.bridge.md) — the minimal
+  managed block placed at the start of every consumer's root `AGENTS.md`.
+- [`shared/AGENTS.md`](shared/AGENTS.md) — the shared rules rendered into the
+  committed `.agent-instructions/solidstats/AGENTS.md` companion.
 - [`shared/MEMORY.md`](shared/MEMORY.md) — the complete SolidStats MemPalace
   contract: role wings, recall, semantic capture, corrections, and frozen
   archives.
@@ -45,14 +47,16 @@ maintenance rules.
 
 A release is rolled out locally after its acceptance gate. The batch script
 first verifies all eight checkouts: each must exist, be clean, and exactly
-match its upstream. Only after the complete preflight does it update the root
-block, companion contract, and GSD config. Commits and pushes remain a separate
-reviewable step routed by each repository's Git policy.
+match its upstream. Only after the complete preflight does it update the thin
+root bridge, companion bundle, and GSD config. Commits and pushes remain a
+separate reviewable step routed by each repository's Git policy.
 
 The generated contract is committed in every consumer, so its diff is visible
-before publication. Repository-specific instructions remain outside the
-managed markers. The installer refuses to write a root `AGENTS.md` larger than
-32 KiB.
+before publication. A consumer checkout performs no task-start remote update
+check. The four-file bundle is mandatory and fail-closed: `AGENTS.md`,
+`CONTRACT_VERSION`, `MEMORY.md`, and `GSD.md` must all be present and readable.
+Repository-specific root instructions remain outside the managed markers. The
+installer refuses to write a root `AGENTS.md` larger than 32 KiB.
 
 ## Bootstrapping a new consumer repo
 

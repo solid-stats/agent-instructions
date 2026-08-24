@@ -15,8 +15,9 @@ the acceptance sequence below first.
 - `shared/MEMORY.md` owns memory scope, recall, capture, correction, deletion,
   archive handling, and acceptance invariants.
 - `shared/GSD.md` owns manual GSD coordinator integration.
-- `shared/AGENTS.md` is only the routed entry point embedded into root
-  `AGENTS.md` files.
+- `templates/AGENTS.bridge.md` is the thin managed root entry point.
+- `shared/AGENTS.md` is rendered into each consumer's committed companion
+  bundle and owns shared rules plus repository-specific memory routing.
 - `config/repositories.tsv` owns repository membership, active role wings, and
   primary archive wings.
 - `gsd/common-config.json` disables the incompatible native GSD MemPalace
@@ -26,6 +27,7 @@ The companion bundle generated in every consumer is:
 
 ```text
 .agent-instructions/solidstats/
+├── AGENTS.md
 ├── CONTRACT_VERSION
 ├── GSD.md
 └── MEMORY.md
@@ -93,7 +95,7 @@ Acceptance requires all of the following:
 4. Capture UAT writes one semantic drawer to a unique `uat-<nonce>` room,
    verifies it, and deletes it by exact ID.
 5. No UAT drawer remains.
-6. Every consumer carries contract `1.0.0`, the routed root block, and exact
+6. Every consumer carries contract `1.1.0`, the thin root bridge, and exact
    companion files.
 7. Every platform GSD config contains the fail-closed native MemPalace block
    and its manifest-owned role wing.

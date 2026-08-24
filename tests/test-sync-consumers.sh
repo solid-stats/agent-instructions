@@ -72,13 +72,17 @@ for repository in $repositories; do
     git -C "$workspace/$repository" push >/dev/null
 done
 
-grep -F '`frontend`' "$workspace/web/AGENTS.md" >/dev/null \
+grep -F '`frontend`' "$workspace/web/.agent-instructions/solidstats/AGENTS.md" >/dev/null \
     || fail "web did not receive the frontend wing"
-grep -F '`backend`' "$workspace/server-2/AGENTS.md" >/dev/null \
+grep -F '`backend`' "$workspace/server-2/.agent-instructions/solidstats/AGENTS.md" >/dev/null \
     || fail "server-2 did not receive the backend wing"
-grep -F '`common`' "$workspace/plans/AGENTS.md" >/dev/null \
+grep -F '`common`' "$workspace/plans/.agent-instructions/solidstats/AGENTS.md" >/dev/null \
     || fail "plans did not receive the common wing"
-pass "rollout materializes repository-specific routing and companion files"
+for repository in $repositories; do
+    ! grep -Fq '## Skills First' "$workspace/$repository/AGENTS.md" \
+        || fail "$repository root still embeds the shared contract"
+done
+pass "rollout materializes thin bridges and repository-specific companions"
 
 sh "$sync" --workspace-root "$workspace" --check >/dev/null \
     || fail "--check failed for synchronized consumers"

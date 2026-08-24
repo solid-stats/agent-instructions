@@ -10,8 +10,8 @@
 `solidstats-shared-project-standards`, который загружается не всегда.
 
 Это вспомогательный (supporting) репозиторий: рантайм-границ не несёт. Он задаёт
-версионированный контракт, который генератор встраивает в корневой `AGENTS.md`
-и companion-файлы остальных репозиториев.
+тонкий root bridge и версионированный контракт, который коммитится в
+consumer-репозитории как companion bundle.
 
 Сам этот канонический репозиторий не материализует контракт обратно в свой
 `AGENTS.md`: корневой файл содержит только bootstrap к `shared/*` и локальные
@@ -19,8 +19,10 @@
 
 ## Что здесь лежит
 
-- [`shared/AGENTS.md`](shared/AGENTS.md) — источник блока, который генератор
-  помещает в начало корневого `AGENTS.md` каждого репозитория-потребителя.
+- [`templates/AGENTS.bridge.md`](templates/AGENTS.bridge.md) — минимальный
+  managed-блок в начале корневого `AGENTS.md` каждого consumer-репозитория.
+- [`shared/AGENTS.md`](shared/AGENTS.md) — общие правила, которые генератор
+  помещает в committed companion `.agent-instructions/solidstats/AGENTS.md`.
 - [`shared/MEMORY.md`](shared/MEMORY.md) — полный контракт SolidStats MemPalace:
   role-wings, recall, semantic capture, corrections и frozen archives.
 - [`shared/GSD.md`](shared/GSD.md) — manual GSD adapter при выключенной native
@@ -43,13 +45,16 @@
 
 Релиз распространяется локально после acceptance gate. Batch-скрипт сначала
 проверяет все восемь checkout: каждый должен существовать, быть чистым и точно
-совпадать с upstream. Только после общей preflight-проверки он обновляет root
-block, companion-контракт и GSD-конфиг. Коммиты и push остаются отдельным,
+совпадать с upstream. Только после общей preflight-проверки он обновляет тонкий
+root bridge, companion bundle и GSD-конфиг. Коммиты и push остаются отдельным,
 проверяемым шагом по Git-политике каждого репозитория.
 
 Сгенерированный контракт закоммичен в consumer-репозитории, поэтому diff виден
-до публикации. Локальные инструкции остаются за служебными маркерами.
-Установщик не записывает корневой `AGENTS.md`, если тот превышает 32 КиБ.
+до публикации. Проверки remote freshness на старте задачи нет. Bundle из
+`AGENTS.md`, `CONTRACT_VERSION`, `MEMORY.md` и `GSD.md` обязателен целиком:
+отсутствие или нечитаемость любого файла блокирует product work. Локальные
+инструкции остаются за служебными маркерами. Установщик не записывает корневой
+`AGENTS.md`, если тот превышает 32 КиБ.
 
 ## Первичная установка нового репо-потребителя
 

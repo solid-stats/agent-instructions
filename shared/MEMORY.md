@@ -3,8 +3,8 @@
 # SolidStats agent memory contract
 
 This contract governs project memory for every repository listed in the
-canonical `config/repositories.tsv` manifest. The managed block in each
-repository's root `AGENTS.md` declares that repository's primary active wing
+canonical `config/repositories.tsv` manifest. The rendered companion
+`AGENTS.md` in each repository declares that repository's primary active wing
 and primary archive wing.
 
 ## Instance and authority boundary

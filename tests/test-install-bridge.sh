@@ -22,22 +22,18 @@ tmp7=''
 expected=''
 trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$expected"' EXIT HUP INT TERM
 
-assert_generated_block() {
+assert_bridge() {
     target=$1
     expected=$(mktemp)
     {
         printf '%s\n' "$begin_marker"
-        sed \
-            -e 's|{{SOLIDSTATS_CONTRACT_VERSION_PATH}}|.agent-instructions/solidstats/CONTRACT_VERSION|g' \
-            -e 's|{{SOLIDSTATS_MEMORY_CONTRACT_PATH}}|.agent-instructions/solidstats/MEMORY.md|g' \
-            -e 's|{{SOLIDSTATS_GSD_CONTRACT_PATH}}|.agent-instructions/solidstats/GSD.md|g' \
-            -e 's|{{SOLIDSTATS_PRIMARY_MEMORY_WING}}|frontend|g' \
-            -e 's|{{SOLIDSTATS_PRIMARY_ARCHIVE_WING}}|web-archive|g' \
-            "$repo_root/shared/AGENTS.md"
+        cat "$repo_root/templates/AGENTS.bridge.md"
         printf '%s\n' "$end_marker"
     } > "$expected"
     head -n "$(wc -l < "$expected")" "$target" | cmp -s "$expected" - \
-        || fail "generated block does not match shared/AGENTS.md"
+        || fail "generated block does not match the thin bridge template"
+    ! grep -Fq '## Skills First' "$target" \
+        || fail "root AGENTS.md still embeds the shared contract"
     rm -f "$expected"
     expected=''
 }
@@ -45,6 +41,19 @@ assert_generated_block() {
 assert_companions() {
     target_root=$1
     companion="$target_root/.agent-instructions/solidstats"
+    expected=$(mktemp)
+    sed \
+        -e 's|{{SOLIDSTATS_AGENT_CONTRACT_PATH}}|.agent-instructions/solidstats/AGENTS.md|g' \
+        -e 's|{{SOLIDSTATS_CONTRACT_VERSION_PATH}}|.agent-instructions/solidstats/CONTRACT_VERSION|g' \
+        -e 's|{{SOLIDSTATS_MEMORY_CONTRACT_PATH}}|.agent-instructions/solidstats/MEMORY.md|g' \
+        -e 's|{{SOLIDSTATS_GSD_CONTRACT_PATH}}|.agent-instructions/solidstats/GSD.md|g' \
+        -e 's|{{SOLIDSTATS_PRIMARY_MEMORY_WING}}|frontend|g' \
+        -e 's|{{SOLIDSTATS_PRIMARY_ARCHIVE_WING}}|web-archive|g' \
+        "$repo_root/shared/AGENTS.md" > "$expected"
+    cmp -s "$expected" "$companion/AGENTS.md" \
+        || fail "AGENTS.md companion differs"
+    rm -f "$expected"
+    expected=''
     cmp -s "$repo_root/CONTRACT_VERSION" "$companion/CONTRACT_VERSION" \
         || fail "CONTRACT_VERSION companion differs"
     cmp -s "$repo_root/shared/MEMORY.md" "$companion/MEMORY.md" \
@@ -66,7 +75,7 @@ pass "canonical source repository does not self-materialize"
 sh "$bridge" --root "$tmp" --repository solid-stats/web >/dev/null
 [ -f "$tmp/AGENTS.md" ] || fail "AGENTS.md not created"
 [ "$(stat -c '%a' "$tmp/AGENTS.md")" = '644' ] || fail "new AGENTS.md mode is not 0644"
-assert_generated_block "$tmp/AGENTS.md"
+assert_bridge "$tmp/AGENTS.md"
 [ ! -e "$tmp/.agent-instructions/AGENTS.md" ] || fail "legacy file created during fresh install"
 assert_companions "$tmp"
 pass "fresh install creates the routed block and companion contract"
@@ -78,7 +87,7 @@ printf '%s\n' '@.agent-instructions/AGENTS.md' > "$tmp2/AGENTS.md"
 printf 'legacy content\n' > "$tmp2/.agent-instructions/AGENTS.md"
 
 sh "$bridge" --root "$tmp2" --repository solid-stats/web >/dev/null
-assert_generated_block "$tmp2/AGENTS.md"
+assert_bridge "$tmp2/AGENTS.md"
 ! grep -Fqx '@.agent-instructions/AGENTS.md' "$tmp2/AGENTS.md" \
     || fail "legacy import survived migration"
 [ ! -e "$tmp2/.agent-instructions/AGENTS.md" ] || fail "legacy AGENTS.md survived migration"
@@ -92,7 +101,7 @@ chmod 640 "$tmp3/AGENTS.md"
 
 sh "$bridge" --root "$tmp3" --repository solid-stats/web >/dev/null
 [ "$(stat -c '%a' "$tmp3/AGENTS.md")" = '640' ] || fail "existing AGENTS.md mode was not preserved"
-assert_generated_block "$tmp3/AGENTS.md"
+assert_bridge "$tmp3/AGENTS.md"
 grep -Fqx '> This repo does X.' "$tmp3/AGENTS.md" || fail "existing header was lost"
 grep -Fqx 'Consumer-owned instructions.' "$tmp3/AGENTS.md" || fail "existing local instructions were lost"
 end_line=$(grep -Fnx -- "$end_marker" "$tmp3/AGENTS.md" | cut -d: -f1)
@@ -105,7 +114,7 @@ tmp4=$(mktemp -d)
 printf '%s\nobsolete shared content\n%s\n# Local\nkeep this\n' "$begin_marker" "$end_marker" > "$tmp4/AGENTS.md"
 
 sh "$bridge" --root "$tmp4" --repository solid-stats/web >/dev/null
-assert_generated_block "$tmp4/AGENTS.md"
+assert_bridge "$tmp4/AGENTS.md"
 [ "$(grep -Fcx "$begin_marker" "$tmp4/AGENTS.md")" -eq 1 ] \
     || fail "managed begin marker was duplicated"
 grep -Fqx 'keep this' "$tmp4/AGENTS.md" || fail "local content was lost during marker replacement"
@@ -118,11 +127,20 @@ after=$(cksum "$tmp4/AGENTS.md" "$tmp4/.agent-instructions/solidstats/"*)
 [ "$before" = "$after" ] || fail "re-running install-bridge.sh changed managed files"
 sh "$bridge" --root "$tmp4" --repository solid-stats/web --check >/dev/null \
     || fail "--check should pass after install"
+for bundle_file in AGENTS.md CONTRACT_VERSION MEMORY.md GSD.md; do
+    mv "$tmp4/.agent-instructions/solidstats/$bundle_file" \
+        "$tmp4/.agent-instructions/solidstats/$bundle_file.missing"
+    if sh "$bridge" --root "$tmp4" --repository solid-stats/web --check >/dev/null 2>&1; then
+        fail "--check passed with missing companion $bundle_file"
+    fi
+    mv "$tmp4/.agent-instructions/solidstats/$bundle_file.missing" \
+        "$tmp4/.agent-instructions/solidstats/$bundle_file"
+done
 printf 'outdated\n' > "$tmp4/AGENTS.md"
 if sh "$bridge" --root "$tmp4" --repository solid-stats/web --check >/dev/null 2>&1; then
     fail "--check passed for outdated AGENTS.md"
 fi
-pass "install is idempotent and --check detects drift"
+pass "install is idempotent and --check detects root or bundle drift"
 
 # 7. A dry run performs complete validation without writing.
 tmp7=$(mktemp -d)

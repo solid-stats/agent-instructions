@@ -57,8 +57,15 @@ shared_agents="$contract_root/shared/AGENTS.md"
 shared_memory="$contract_root/shared/MEMORY.md"
 shared_gsd="$contract_root/shared/GSD.md"
 shared_version="$contract_root/CONTRACT_VERSION"
+bridge_template="$contract_root/templates/AGENTS.bridge.md"
 
-for required_file in "$manifest" "$shared_agents" "$shared_memory" "$shared_gsd" "$shared_version"; do
+for required_file in \
+    "$manifest" \
+    "$shared_agents" \
+    "$shared_memory" \
+    "$shared_gsd" \
+    "$shared_version" \
+    "$bridge_template"; do
     [ -r "$required_file" ] || {
         echo "Contract repository is incomplete: $required_file missing." >&2
         exit 2
@@ -140,9 +147,11 @@ if [ "$repository" = 'solid-stats/agent-instructions' ]; then
 fi
 
 companion_dir="$root/.agent-instructions/solidstats"
+agents_path='.agent-instructions/solidstats/AGENTS.md'
 version_path='.agent-instructions/solidstats/CONTRACT_VERSION'
 memory_path='.agent-instructions/solidstats/MEMORY.md'
 gsd_path='.agent-instructions/solidstats/GSD.md'
+agents_companion_target="$companion_dir/AGENTS.md"
 version_target="$companion_dir/CONTRACT_VERSION"
 memory_target="$companion_dir/MEMORY.md"
 gsd_target="$companion_dir/GSD.md"
@@ -157,9 +166,9 @@ legacy_file="$legacy_dir/AGENTS.md"
 
 tmp_dir=${TMPDIR:-/tmp}
 local_content=$(mktemp "$tmp_dir/install-bridge-local.XXXXXX")
-rendered_shared=$(mktemp "$tmp_dir/install-bridge-shared.XXXXXX")
+rendered_companion_agents=$(mktemp "$tmp_dir/install-bridge-agents-companion.XXXXXX")
 new_agents=$(mktemp "$tmp_dir/install-bridge-agents.XXXXXX")
-trap 'rm -f "$local_content" "$rendered_shared" "$new_agents"' EXIT HUP INT TERM
+trap 'rm -f "$local_content" "$rendered_companion_agents" "$new_agents"' EXIT HUP INT TERM
 
 if [ -f "$agents_target" ]; then
     if ! awk -v begin="$begin_marker" -v end="$end_marker" -v legacy="$legacy_import" '
@@ -176,12 +185,14 @@ if [ -f "$agents_target" ]; then
 fi
 
 awk \
+    -v agents_path="$agents_path" \
     -v version_path="$version_path" \
     -v memory_path="$memory_path" \
     -v gsd_path="$gsd_path" \
     -v memory_wing="$memory_wing" \
     -v archive_wing="$archive_wing" '
     {
+        gsub(/\{\{SOLIDSTATS_AGENT_CONTRACT_PATH\}\}/, agents_path)
         gsub(/\{\{SOLIDSTATS_CONTRACT_VERSION_PATH\}\}/, version_path)
         gsub(/\{\{SOLIDSTATS_MEMORY_CONTRACT_PATH\}\}/, memory_path)
         gsub(/\{\{SOLIDSTATS_GSD_CONTRACT_PATH\}\}/, gsd_path)
@@ -189,16 +200,16 @@ awk \
         gsub(/\{\{SOLIDSTATS_PRIMARY_ARCHIVE_WING\}\}/, archive_wing)
         print
     }
-' "$shared_agents" > "$rendered_shared"
+' "$shared_agents" > "$rendered_companion_agents"
 
-if grep -F '{{SOLIDSTATS_' "$rendered_shared" >/dev/null; then
+if grep -F '{{SOLIDSTATS_' "$rendered_companion_agents" >/dev/null; then
     echo 'Unresolved SolidStats contract placeholder.' >&2
     exit 2
 fi
 
 {
     printf '%s\n' "$begin_marker"
-    cat "$rendered_shared"
+    cat "$bridge_template"
     printf '%s\n' "$end_marker"
     cat "$local_content"
 } > "$new_agents"
@@ -210,7 +221,8 @@ if [ "$new_agents_size" -gt "$max_agents_size" ]; then
 fi
 
 companions_current='false'
-if cmp -s "$shared_version" "$version_target" \
+if cmp -s "$rendered_companion_agents" "$agents_companion_target" \
+    && cmp -s "$shared_version" "$version_target" \
     && cmp -s "$shared_memory" "$memory_target" \
     && cmp -s "$shared_gsd" "$gsd_target"; then
     companions_current='true'
@@ -235,6 +247,7 @@ fi
 
 mkdir -p "$companion_dir"
 for source_target in \
+    "$rendered_companion_agents:$agents_companion_target" \
     "$shared_version:$version_target" \
     "$shared_memory:$memory_target" \
     "$shared_gsd:$gsd_target"; do
@@ -247,7 +260,7 @@ for source_target in \
 done
 
 target_tmp=$(mktemp "$root/.AGENTS.md.install-bridge.XXXXXX")
-trap 'rm -f "$local_content" "$rendered_shared" "$new_agents" "$target_tmp"' EXIT HUP INT TERM
+trap 'rm -f "$local_content" "$rendered_companion_agents" "$new_agents" "$target_tmp"' EXIT HUP INT TERM
 if [ -f "$agents_target" ]; then
     cp -p "$agents_target" "$target_tmp"
     cat "$new_agents" > "$target_tmp"

@@ -15,9 +15,9 @@ primary active memory wing is `common`; it has no primary archive wing.
 
 > **What this repo is.** `agent-instructions` is the canonical source of
 > AI-agent rules shared across every `solid-stats` repository: the
-> `shared/AGENTS.md` source embedded into consumer root files, the common subset
-> of GSD `.planning/config.json`, and the sync mechanism that keeps both
-> current.
+> `shared/AGENTS.md` source materialized into committed consumer bundles, the
+> thin root bridge that loads it, the common subset of GSD
+> `.planning/config.json`, and the sync mechanism that keeps them current.
 >
 > **Boundary.** A **supporting** repo with no runtime boundary. It owns only the
 > shared content and the scripts that distribute it. Product source, secrets,
@@ -25,11 +25,13 @@ primary active memory wing is `common`; it has no primary archive wing.
 
 ## Editing the shared fragment
 
-`shared/AGENTS.md` is the source for the managed block generated at the start
-of every consumer's root `AGENTS.md`. Edit it here, never inside a generated
-consumer block. Keep it project-agnostic: anything specific to one repository's
-boundary or stack belongs outside the managed markers in that repository's own
-`AGENTS.md`.
+`shared/AGENTS.md` is the source for the committed
+`.agent-instructions/solidstats/AGENTS.md` companion generated in every
+consumer. The consumer's root `AGENTS.md` contains only the thin managed bridge
+from `templates/AGENTS.bridge.md`. Edit both sources here, never inside generated
+consumer files. Keep shared rules project-agnostic: anything specific to one
+repository's boundary or stack belongs outside the managed markers in that
+repository's root `AGENTS.md`.
 
 Documentation in this repository is English except for its bilingual
 `README.md` and `README.en.md`.

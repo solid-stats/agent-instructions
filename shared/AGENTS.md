@@ -3,6 +3,22 @@
      are overwritten by the next contract rollout. Edit the source at
      https://github.com/solid-stats/agent-instructions/blob/master/shared/AGENTS.md instead. -->
 
+## Contract Bundle Integrity
+
+Before product work, confirm that every file in the committed contract bundle
+is present and readable:
+
+- `{{SOLIDSTATS_AGENT_CONTRACT_PATH}}`;
+- `{{SOLIDSTATS_CONTRACT_VERSION_PATH}}`;
+- `{{SOLIDSTATS_MEMORY_CONTRACT_PATH}}`;
+- `{{SOLIDSTATS_GSD_CONTRACT_PATH}}`.
+
+If any file is missing or unreadable, stop product work and restore the complete
+bundle with the canonical installer. Do not continue from partial instructions,
+infer missing routing, or substitute another memory store. Contract freshness
+is managed by the repository rollout; do not perform a remote update check at
+task start.
+
 ## Skills First
 
 Before acting on any user request in this repository, scan available skills by name and description. If any skill has even a small chance of helping any part of the task, use it and read only the relevant instructions before proceeding.

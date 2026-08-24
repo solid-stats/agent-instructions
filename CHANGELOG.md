@@ -11,8 +11,16 @@ operational impact level:
 
 Impact: `routine`
 
+## 1.1.0 - 2026-08-25
+
+Impact: `important`
+
 - Stop self-materializing the shared consumer block into the canonical
   repository's root `AGENTS.md`.
+- Replace the embedded consumer contract with a thin root bridge to a committed
+  companion `AGENTS.md`.
+- Make the four-file companion bundle fail-closed without adding a task-start
+  remote update check or a second version number.
 
 ## 1.0.0 - 2026-08-25
 

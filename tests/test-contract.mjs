@@ -26,6 +26,30 @@ for (const pointer of [
   assert(rootAgents.includes(pointer), `canonical AGENTS.md is missing ${pointer}`);
 }
 
+const bridgeTemplate = readFileSync(join(repoRoot, "templates", "AGENTS.bridge.md"), "utf8");
+assert(
+  bridgeTemplate.includes(".agent-instructions/solidstats/AGENTS.md"),
+  "thin bridge must route to the committed companion AGENTS.md",
+);
+assert(
+  !bridgeTemplate.includes("{{SOLIDSTATS_"),
+  "thin bridge must not carry repository metadata",
+);
+
+const sharedAgents = readFileSync(join(repoRoot, "shared", "AGENTS.md"), "utf8");
+for (const path of [
+  "{{SOLIDSTATS_AGENT_CONTRACT_PATH}}",
+  "{{SOLIDSTATS_CONTRACT_VERSION_PATH}}",
+  "{{SOLIDSTATS_MEMORY_CONTRACT_PATH}}",
+  "{{SOLIDSTATS_GSD_CONTRACT_PATH}}",
+]) {
+  assert(sharedAgents.includes(path), `shared AGENTS.md is missing bundle member ${path}`);
+}
+assert(
+  sharedAgents.includes("stop product work"),
+  "incomplete companion bundles must block product work",
+);
+
 const manifestLines = readFileSync(join(repoRoot, "config", "repositories.tsv"), "utf8")
   .trimEnd()
   .split(/\r?\n/u);
