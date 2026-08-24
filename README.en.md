@@ -10,17 +10,19 @@ paragraph was identical in `web`, `server-2`, `replays-fetcher`, and
 `replay-parser-2`) or lived in the triggerable
 `solidstats-shared-project-standards` skill, which is not always loaded.
 
-This is a supporting repository: it owns no runtime boundary. It supplies
-shared content that the other repositories embed into their root instructions
-through a generated block.
+This is a supporting repository: it owns no runtime boundary. It supplies a
+versioned contract that consumers embed into their root instructions and
+managed companion files.
 
 ## What lives here
 
 - [`shared/AGENTS.md`](shared/AGENTS.md) — the source copied into a managed
-  block at the start of every consumer's root `AGENTS.md`: session hygiene,
-  git conventions (including the auto commit + push policy), security
-  minimums, risk management, documentation language, and MCP/doc-lookup
-  rules.
+  block at the start of every consumer's root `AGENTS.md`.
+- [`shared/MEMORY.md`](shared/MEMORY.md) — the complete SolidStats MemPalace
+  contract: role wings, recall, semantic capture, corrections, and frozen
+  archives.
+- [`shared/GSD.md`](shared/GSD.md) — the manual GSD adapter used while the
+  native MemPalace capability remains disabled.
 - [`gsd/common-config.json`](gsd/common-config.json) — the common subset of
   GSD's `.planning/config.json` keys, synced without touching repo-local keys
   (`project_code`, `agent_skills`, `test_command`, …).
@@ -30,31 +32,41 @@ through a generated block.
   install for a new consumer repo.
 - [`scripts/sync-gsd-config.mjs`](scripts/sync-gsd-config.mjs) — a surgical
   dotted-path merge of the common GSD keys, leaving the rest untouched.
-- [`.github/workflows/sync-on-release.yml`](.github/workflows/sync-on-release.yml)
-  — on release publish (a `CONTRACT_VERSION` bump), opens a PR into every repo
-  in the manifest. Merge is manual; nothing auto-merges.
+- [`scripts/sync-consumers.sh`](scripts/sync-consumers.sh) — the fail-closed
+  local batch rollout for every consumer repository.
+- [`CONTRACT_VERSION`](CONTRACT_VERSION) and [`CHANGELOG.md`](CHANGELOG.md) —
+  the single SemVer contract version and each release's impact.
 
 ## How content stays fresh in consumer repos
 
-Freshness comes from **auto-PR, not a manual clone**: the generated block is
-committed in each consumer repo, so diffs are visible in the PR itself.
-Repository-specific instructions remain editable outside the managed markers.
-The installer refuses to write a root `AGENTS.md` larger than Codex's default
-32 KiB project-document limit.
+A release is rolled out locally after its acceptance gate. The batch script
+first verifies all eight checkouts: each must exist, be clean, and exactly
+match its upstream. Only after the complete preflight does it update the root
+block, companion contract, and GSD config. Commits and pushes remain a separate
+reviewable step routed by each repository's Git policy.
+
+The generated contract is committed in every consumer, so its diff is visible
+before publication. Repository-specific instructions remain outside the
+managed markers. The installer refuses to write a root `AGENTS.md` larger than
+32 KiB.
 
 ## Bootstrapping a new consumer repo
 
-```bash
+```sh
 git clone https://github.com/solid-stats/agent-instructions.git /tmp/agent-instructions
-sh /tmp/agent-instructions/scripts/install-bridge.sh --root .
+sh /tmp/agent-instructions/scripts/install-bridge.sh --root . --repository solid-stats/<repo>
 ```
 
 ## Development
 
 ```sh
 sh -n scripts/install-bridge.sh
+sh -n scripts/sync-consumers.sh
 sh tests/test-install-bridge.sh
-node scripts/sync-gsd-config.mjs <path-to-repo> --dry-run
+sh tests/test-sync-gsd-config.sh
+sh tests/test-sync-consumers.sh
+node tests/test-contract.mjs
+sh scripts/sync-consumers.sh --workspace-root .. --check
 ```
 
 ## License

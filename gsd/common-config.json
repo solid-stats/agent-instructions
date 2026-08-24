@@ -1,5 +1,5 @@
 {
-  "_comment": "Dotted-path keys, same convention gsd-core's federated-config.cjs uses for its schema keys. sync-gsd-config.mjs writes each key into the target repo's .planning/config.json at that exact path, leaving every other key untouched. Verified with a dry-run against all 5 platform repos, not just guessed from two samples: workflow.ui_phase/ui_safety_gate and code_quality.fallow.* were dropped after the dry-run showed they are deliberately false/absent in replays-fetcher, replay-parser-2 and infrastructure (no UI, or non-TS stack) — those are repo-type-specific, not universal. mempalace.cross_project_tunnels is a deliberate override of gsd-core's own default (false) — SolidStats is a genuinely multi-repo platform (see shared/AGENTS.md's MemPalace section) and wants tunnels on everywhere, unlike the single-service default gsd-core assumes. Per-repo overrides that stay local: workflow.ai_integration_phase, workflow.skip_discuss, workflow.use_worktrees, workflow.ui_phase, workflow.ui_safety_gate, workflow.ui_review, workflow.test_command, code_quality.fallow.*, mempalace.capture_artifacts, mempalace.mirror_kg, mempalace.auto_capture_hooks, project_code, agent_skills, and anything else absent from this file.",
+  "_comment": "Dotted-path keys are merged into each platform repository's .planning/config.json without replacing repo-local settings. The native GSD MemPalace capability is intentionally fail-closed because its generic handlers use the wrong server namespace, raw artifact capture, unsupported rooms, KG, diary, tunnels, and ship-time curation. The managed SolidStats GSD.md adapter owns coordinator recall and semantic closure instead. mempalace.wing is repository-specific and is written from config/repositories.tsv by sync-gsd-config.mjs.",
 
   "workflow.research": true,
   "workflow.plan_check": true,
@@ -37,6 +37,13 @@
 
   "graphify.enabled": true,
 
-  "mempalace.enabled": true,
-  "mempalace.cross_project_tunnels": true
+  "mempalace.enabled": false,
+  "mempalace.memory_mode": "augment",
+  "mempalace.recall_on_discuss": false,
+  "mempalace.recall_on_plan": false,
+  "mempalace.capture_artifacts": false,
+  "mempalace.mirror_kg": false,
+  "mempalace.cross_project_tunnels": false,
+  "mempalace.diary_journal": false,
+  "mempalace.auto_capture_hooks": false
 }

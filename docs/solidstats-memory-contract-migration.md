@@ -1,346 +1,103 @@
-# SolidStats Memory Contract Migration
+# SolidStats memory contract cutover handoff
 
-## Purpose
+## Status
 
-This document is the durable handoff for the pending SolidStats memory contract
-migration. It records the accepted behavior that must later be implemented in
-`shared/AGENTS.md`, the shared GSD configuration or adapter, repository bridges,
-and machine-local MCP registration.
+The canonical contract bundle is implemented in this repository. Consumer
+rollout remains gated on the infrastructure Phase 21.1 client update that
+exposes `mempalace_update_drawer` through `solidstats_memory`.
 
-It is intentionally separate from the runtime migration owned by the
-`infrastructure` repository. Do not mark this handoff complete merely because
-Qdrant is deployed: the agent contract, GSD lifecycle, and client routing must
-also be updated and verified.
+Do not run the consumer batch merely because this repository is released. Run
+the acceptance sequence below first.
 
-The current VocalClub v7 contract is the behavioral reference. Older
-VocalClub infrastructure documentation describes an earlier recall policy and
-must not override the current contract.
+## Canonical sources
 
-## Confirmed boundaries
+- `CONTRACT_VERSION` is the single contract version.
+- `shared/MEMORY.md` owns memory scope, recall, capture, correction, deletion,
+  archive handling, and acceptance invariants.
+- `shared/GSD.md` owns manual GSD coordinator integration.
+- `shared/AGENTS.md` is only the routed entry point embedded into root
+  `AGENTS.md` files.
+- `config/repositories.tsv` owns repository membership, active role wings, and
+  primary archive wings.
+- `gsd/common-config.json` disables the incompatible native GSD MemPalace
+  capability. `scripts/sync-gsd-config.mjs` adds the repository-specific wing.
 
-- Keep three logically separate palaces:
-  - SolidStats: `solidstats_memory`;
-  - personal state: `mempalace_personal`;
-  - VocalClub: `vocalclub_memory`.
-- Do not merge their stores, credentials, backups, retrieval, or lifecycle.
-- Rename the current generic SolidStats MCP registration from `mempalace` to
-  `solidstats_memory` atomically at cutover.
-- Do not leave `mempalace` as an alias after cutover.
-- Keep personal and VocalClub routing unchanged.
-- Current repository content and other primary sources remain authoritative.
-  Palace content is context to verify, never a replacement for current code,
-  schemas, APIs, plans, or operational evidence.
+The companion bundle generated in every consumer is:
 
-## Legacy write freeze and migration boundary
+```text
+.agent-instructions/solidstats/
+├── CONTRACT_VERSION
+├── GSD.md
+└── MEMORY.md
+```
 
-- The existing Chroma-backed SolidStats palace is frozen against all new
-  writes while the replacement is prepared.
-- Read-only recall may continue from the old palace until cutover.
-- Build, clean, classify, and embed the replacement locally on the more
-  powerful workstation. Do not perform the rebuild on the VPS.
-- Preserve the stopped old Chroma volume or snapshot as rollback material.
-- Do not run the old Chroma palace and the new Qdrant palace concurrently on
-  the VPS as long-lived services.
-- Do not migrate the existing temporal KG, diary, semantic tunnels, or agent
-  wings blindly.
-- Audit existing KG content separately. Delete personal facts only through an
-  explicitly approved exact-ID batch.
-- Audit and remove existing tunnels only through an explicitly approved
-  exact-ID batch.
+## Runtime boundary
 
-## Wing model
-
-### Active wings
-
-- Every canonical SolidStats repository keeps an active wing named after the
-  repository.
-- The `SolidStats` wing is the platform/common wing. It contains only curated
-  cross-repository semantic conclusions and has no raw seeded corpus.
-- The authoritative repository registry must come from
-  `config/repositories.tsv`; the contract must not rely on an independently
-  maintained prose list.
-- Agent-created wings are forbidden.
-
-### Frozen archive wings
-
-- Preserve the useful legacy raw corpus in a separate archive wing per source
-  repository, for example `web-archive` and `server-2-archive`.
-- Do not create one shared archive wing.
-- Archive material is an untrusted historical lead, not current semantic
-  truth.
-- Do not automatically mine, sync, or append to archive wings after migration.
-- A future archive addition requires an explicit curator-approved operation.
-
-### Active room taxonomy
-
-Agent-created active memory may use only these rooms:
-
-- `decisions`;
-- `contracts`;
-- `conventions`;
-- `operations`;
-- `incidents`;
-- `migrations`.
-
-Legacy archive rooms do not become active semantic rooms merely because their
-content was migrated.
-
-## Task ownership
-
-- The main agent owns at most one recall sequence and one closure capture
-  sequence for a top-level task.
-- Recall begins in the first tool batch, in parallel with the repository
-  bridge, applicable skills, and current primary evidence.
-- Specialists and subagents receive filtered, provenance-bearing context from
-  the main agent. They must not independently recall or capture memory.
-- The managed repository bridge declares the primary active wing.
-- If `solidstats_memory` is unavailable, retry once later in the session,
-  continue from primary evidence, and report the failure in the handoff.
-- Never substitute personal, VocalClub, flat global memory, or a stale local
-  outbox for unavailable SolidStats memory.
-
-## Federated scoped recall
-
-Run separate wing-filtered searches. Unfiltered top-k search is forbidden
-because differently sized wings would suppress smaller but relevant scopes.
-
-Initial discovery budgets are:
-
-1. up to 5 results from the primary active repository wing;
-2. up to 3 results from the platform/common `SolidStats` wing;
-3. up to 2 results from every other active repository wing;
-4. up to 2 results from the primary repository's archive wing;
-5. up to 2 results from a foreign archive wing only after current evidence
-   proves the dependency and promotes that archive.
-
-These are candidate budgets, not quotas for working context. A candidate may
-influence the task only when its content is relevant and its provenance is
-usable.
-
-For every relevant candidate:
-
-- treat similarity only as candidate ordering;
-- fetch the complete drawer before relying on it;
-- verify the drawer against current primary evidence;
-- treat archive results as weaker than active semantic results;
-- keep only the filtered content needed by the task.
-
-MemPalace semantic tunnels are not part of recall. Do not create, query, or
-follow them as a substitute for federated search.
-
-## Evidence-seeded term expansion
-
-The final contract must preserve the complete VocalClub query discipline, not
-reduce it to a generic instruction to retry search.
-
-### Initial queries
-
-- Use the same task identifiers and keywords in every initial active-wing
-  query.
-- Keep `query` short and identifier-heavy. Keep task background in `context`.
-- Seed the initial query from identifiers already carried by the task, such as
-  an issue key, branch or commit, endpoint, entity, service name, exact error,
-  or symptom.
-- Do not wait for a complete task model before starting first-batch recall.
-
-### Promotion and additional searches
-
-- Promote another active wing when a relevant candidate or verified current
-  primary source proves a cross-repository dependency.
-- A promoted wing may introduce additional terms only from:
-  - the user request;
-  - a relevant retrieved drawer;
-  - a verified current primary source.
-- Follow-up searches in a promoted active wing have no fixed numeric limit.
-- Continue while new results add relevant information to the task model.
-- Stop when results repeat, become irrelevant, or no longer change that model.
-- Promotion applies only to the current top-level task.
-
-### Scoped miss fallback
-
-A semantic search miss is not evidence that memory is absent. For the primary
-wing, the `SolidStats` wing, the primary archive, and any promoted wing:
-
-1. run an evidence-seeded alternate query;
-2. inspect scoped rooms;
-3. inspect bounded entries in the relevant wing and room;
-4. fetch only relevant drawers in full;
-5. report no relevant memory only after these scoped fallbacks fail.
-
-Do not expand an unpromoted foreign active or archive wing beyond its initial
-budget without verified current evidence of the dependency.
-
-## Semantic closure capture
-
-For SolidStats, `capture_artifacts: true` means that GSD triggers semantic
-closure capture. It must never mean storing a raw GSD artifact.
-
-### Durability gate
-
-Capture only a verified conclusion that is useful beyond the current task:
-
-- a decision;
-- a contract;
-- a convention;
-- an operational invariant or procedure;
-- an incident root cause and prevention;
-- migration state that future work must know.
-
-If a task produces no durable semantic conclusion, write nothing.
-
-Never store:
-
-- raw `CONTEXT.md`, `PLAN.md`, `SUMMARY.md`, or other `.planning` artifacts;
-- prompts, transcripts, patches, source code, generated code, or logs;
-- routine edits, temporary status, passing-check narration, or speculation;
-- secrets, credentials, personal information, or unpublished sensitive data.
-
-### Record shape and ownership
-
-- Store one independently durable fact per drawer.
-- Route it to the active wing of the repository that owns the conclusion.
-- Use `SolidStats` only for genuinely platform-wide conclusions.
-- Use the matching fixed semantic room.
-- Deduplicate before writing and re-fetch the stored drawer after mutation.
-- Every record must use this structure:
-
-  ```text
-  Task: <stable task identity and scope>
-  Outcome: <verified result>
-  Decisions: <durable conclusions>
-  Validation: <how the conclusion was verified>
-  Sources: <exact current provenance references>
-  ```
-
-- Sources must use stable repository-relative paths, issue IDs, commit IDs, or
-  other durable references, never ephemeral worktree paths.
-
-## Historical correction and curation
-
-- Ordinary task agents must not silently rewrite, delete, or invalidate old
+- SolidStats uses only `solidstats_memory`.
+- Personal memory remains in `mempalace_personal`.
+- VocalClub memory remains in `vocalclub_memory`.
+- The generic `mempalace` registration must not remain as a SolidStats alias.
+- Current repository and live operational evidence stay authoritative over
   memory.
-- A suspected error becomes a correction candidate containing:
-  - the exact drawer ID or temporal fact;
-  - the current primary evidence;
-  - the proposed action and replacement;
-  - a verification query.
-- Only the curator may preview the correction and request approval.
-- Approval applies only to the exact IDs, facts, actions, and replacements
-  shown in that preview.
-- Re-fetch or re-query after every approved mutation.
-- Exact disposable UAT records may be removed by exact drawer ID as part of
-  their own verified test cleanup.
 
-## Post-cutover archive distillation
+Active role wings are `frontend`, `backend`, `fetcher`, `devops`, and `common`.
+The frozen repository-bound archives are defined in `shared/MEMORY.md` and must
+remain immutable.
 
-Archive distillation is a separate post-cutover activity. It must not delay the
-runtime migration or weaken the frozen-archive boundary.
+## Phase 21.1 gate
 
-- Process archive wings read-only in bounded repository-owned shards.
-- Use parallel low-cost extraction agents for candidate discovery only. They
-  must not recall from unrelated palaces, mutate drawers, or capture directly
-  into active memory.
-- Every candidate must contain:
-  - the exact archive wing and drawer ID;
-  - the proposed active room and owning active wing;
-  - a concise durable conclusion;
-  - exact legacy provenance;
-  - current primary sources needed for verification;
-  - a confidence level and the reason it may still be useful.
-- Candidate volume is not a success metric. Most legacy records may remain
-  unpromoted.
-- Deduplicate candidates against active memory and against other shards before
-  review.
-- A curator verifies every surviving candidate against current repository or
-  operational evidence. Only verified conclusions may be rewritten into the
-  active semantic record shape.
-- Promotion creates a new active semantic drawer. It never moves, rewrites, or
-  reclassifies the frozen archive drawer.
-- Reject personal data, secrets, stale temporary state, raw artifacts,
-  unsupported conclusions, and facts whose current source cannot be verified.
-- Record shard coverage, candidate counts, rejection reasons, promotions, and
-  verification sources so the distillation can resume without rescanning
-  completed shards.
+Before consumer rollout, verify that the restricted client surface exposes the
+approved update operation and still excludes unsupported generic lifecycle
+operations. Then execute the already approved correction exactly once:
 
-## GSD integration requirements
+- drawer ID: `drawer_infrastructure_operations_234ea02816667f903010e583`;
+- current wing: `infrastructure`;
+- target wing: `devops`;
+- room, content, and provenance: unchanged.
 
-The shared GSD layer must enforce or audit these values across every consumer
-repository:
+Re-fetch that exact drawer and verify the approved fields after mutation. Any
+different ID or mutation requires new approval.
 
-- MemPalace enabled;
-- recall on discuss enabled;
-- recall on plan disabled;
-- semantic closure capture enabled;
-- memory mode `augment`;
-- cross-project semantic tunnels disabled;
-- temporal KG mirroring disabled;
-- diary journaling disabled;
-- generic automatic capture hooks disabled.
+## Local rollout
 
-If a value cannot safely live in `gsd/common-config.json`, the shared adapter or
-validation must still prove that every consumer has the required local value.
-Do not leave lifecycle correctness dependent on undocumented per-repository
-configuration.
+The batch script preflights every consumer checkout before its first write. A
+missing, dirty, untracked, ahead, behind, or diverged checkout blocks the whole
+batch.
 
-The GSD coordinator performs the one recall sequence before discussion and
-carries filtered, provenance-bearing context into planning and execution.
-Planning must not launch a second recall. Wave completion triggers the semantic
-closure gate, not raw artifact capture. Ship-time curation follows the
-correction rules above.
+```sh
+sh scripts/sync-consumers.sh --workspace-root ..
+```
 
-## Required implementation surfaces
+The script updates managed files only. Review each repository diff, run its
+applicable checks, then commit and push using that repository's route:
 
-After the new runtime is verified and ready for cutover, update all affected
-surfaces atomically:
+- `server-2`: branch and pull request;
+- active GSD milestone: its configured milestone branch flow;
+- every other consumer: direct `master` push.
 
-1. `shared/AGENTS.md` with the scoped palace boundary, source hierarchy, wing
-   model, full federated recall, term expansion, fallback, capture, and
-   correction contract;
-2. `gsd/common-config.json` and any shared GSD adapter or validator required to
-   enforce the lifecycle values;
-3. repository bridge generation so each consumer declares its primary wing;
-4. tests for bridge installation and shared GSD configuration;
-5. `CONTRACT_VERSION` and release notes;
-6. machine-local MCP registration from `mempalace` to
-   `solidstats_memory`, with a dedicated token;
-7. recall/capture UAT against the resulting
-   `mcp__solidstats_memory__*` tool surface.
-8. a separate post-cutover archive-distillation phase with read-only extraction
-   agents and curator-owned promotion.
+After all eight consumer commits are published, verify the same version and
+content everywhere:
 
-Do not switch the shared contract before the new endpoint is deployable and
-verified. Do not leave the old and new MCP names active together after cutover.
+```sh
+sh scripts/sync-consumers.sh --workspace-root .. --check
+```
 
-## Acceptance checklist
+## Acceptance
 
-- The generic `mempalace` registration is gone and
-  `solidstats_memory` is the only SolidStats MCP server name.
-- Personal and VocalClub palaces remain isolated and unchanged.
-- Initial recall searches every active wing with the accepted fairness
-  budgets.
-- Archive lookup follows its stricter budgets and verification rules.
-- Evidence-seeded term expansion and scoped miss fallback pass UAT.
-- An unfiltered search is neither required nor recommended by the contract.
-- Tunnels, KG, diary, raw GSD artifacts, and agent wings are absent from the
-  normal lifecycle.
-- A durable conclusion is captured once with exact provenance and read-back
-  verification.
-- A task without a durable conclusion creates no drawer.
-- A correction cannot mutate history without exact curator approval.
-- Every consumer repository receives the same enforced GSD lifecycle.
-- The old palace remains recoverable offline until post-cutover acceptance and
-  rollback expiry are explicitly approved.
-- Archive distillation can run incrementally without granting extraction agents
-  write access or changing frozen archive drawers.
+Acceptance requires all of the following:
 
-## Reference sources
+1. Phase 21.1 client-surface checks pass.
+2. The exact approved drawer correction is read back successfully.
+3. Recall UAT searches all five active wings with the contract budgets and
+   fetches relevant drawers before use.
+4. Capture UAT writes one semantic drawer to a unique `uat-<nonce>` room,
+   verifies it, and deletes it by exact ID.
+5. No UAT drawer remains.
+6. Every consumer carries contract `1.0.0`, the routed root block, and exact
+   companion files.
+7. Every platform GSD config contains the fail-closed native MemPalace block
+   and its manifest-owned role wing.
+8. Consumer changes are committed and published through the correct Git route.
 
-Use the current versions of these repositories when implementing the contract:
-
-- `vocalclub/agent-instructions`: current `AGENTS.md` and `GSD.md`;
-- `vocalclub/vc-mempalace`: deployment, migration, seed, verification, and
-  client UAT documentation;
-- `SolidGames/infrastructure`: the new runtime migration and verification
-  artifacts;
-- this repository: `config/repositories.tsv`, `shared/AGENTS.md`, and
-  `gsd/common-config.json`.
+Archive distillation and any personal-data audit are separate post-cutover
+work. They must not mutate archive drawers or delay this contract acceptance.

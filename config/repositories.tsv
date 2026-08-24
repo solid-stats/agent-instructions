@@ -1,9 +1,10 @@
-# repository	tier	gsd_config_sync
-solid-stats/server-2	platform	yes
-solid-stats/replays-fetcher	platform	yes
-solid-stats/replay-parser-2	platform	yes
-solid-stats/web	platform	yes
-solid-stats/infrastructure	platform	yes
-solid-stats/plans	supporting	no
-solid-stats/skills	supporting	no
-solid-stats/ts-toolchain	supporting	no
+# repository	tier	gsd_config_sync	memory_wing	archive_wing
+solid-stats/agent-instructions	supporting	no	common	none
+solid-stats/server-2	platform	yes	backend	server-2-archive
+solid-stats/replays-fetcher	platform	yes	fetcher	replays-fetcher-archive
+solid-stats/replay-parser-2	platform	yes	backend	replay-parser-2-archive
+solid-stats/web	platform	yes	frontend	web-archive
+solid-stats/infrastructure	platform	yes	devops	infrastructure-archive
+solid-stats/plans	supporting	no	common	none
+solid-stats/skills	supporting	no	common	none
+solid-stats/ts-toolchain	supporting	no	common	none

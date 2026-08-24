@@ -10,16 +10,17 @@
 `solidstats-shared-project-standards`, который загружается не всегда.
 
 Это вспомогательный (supporting) репозиторий: рантайм-границ не несёт. Он задаёт
-общий контент, который генератор встраивает в корневой `AGENTS.md` остальных
-репозиториев.
+версионированный контракт, который генератор встраивает в корневой `AGENTS.md`
+и companion-файлы остальных репозиториев.
 
 ## Что здесь лежит
 
 - [`shared/AGENTS.md`](shared/AGENTS.md) — источник блока, который генератор
-  помещает в начало корневого `AGENTS.md` каждого репозитория-потребителя:
-  session hygiene, git-конвенции (включая политику auto commit + push),
-  security minimums, risk management, documentation language и MCP/doc-lookup
-  правила.
+  помещает в начало корневого `AGENTS.md` каждого репозитория-потребителя.
+- [`shared/MEMORY.md`](shared/MEMORY.md) — полный контракт SolidStats MemPalace:
+  role-wings, recall, semantic capture, corrections и frozen archives.
+- [`shared/GSD.md`](shared/GSD.md) — manual GSD adapter при выключенной native
+  MemPalace capability.
 - [`gsd/common-config.json`](gsd/common-config.json) — общее подмножество
   ключей `.planning/config.json` (GSD), синхронизируемое без затрагивания
   repo-специфичных ключей (`project_code`, `agent_skills`, `test_command`, …).
@@ -29,30 +30,40 @@
   бриджа в новый репозиторий.
 - [`scripts/sync-gsd-config.mjs`](scripts/sync-gsd-config.mjs) — точечный merge
   общих ключей GSD-конфига по dotted-path, без затрагивания остального файла.
-- [`.github/workflows/sync-on-release.yml`](.github/workflows/sync-on-release.yml)
-  — при публикации релиза (бамп `CONTRACT_VERSION`) открывает PR с обновлением
-  в каждый репозиторий из манифеста. Мерж — вручную, авто-мерджа нет.
+- [`scripts/sync-consumers.sh`](scripts/sync-consumers.sh) — локальный
+  fail-closed batch rollout во все consumer-репозитории.
+- [`CONTRACT_VERSION`](CONTRACT_VERSION) и [`CHANGELOG.md`](CHANGELOG.md) —
+  единая SemVer-версия и impact каждого релиза.
 
 ## Как обновляется контент в репо-потребителях
 
-Свежесть — через **auto-PR, а не через ручной клон**: сгенерированный блок
-закоммичен в репозитории-потребителе, поэтому дифф виден прямо в PR. Локальные
-инструкции остаются за пределами служебных маркеров. Установщик не записывает
-корневой `AGENTS.md`, если тот превышает стандартный лимит Codex в 32 КиБ.
+Релиз распространяется локально после acceptance gate. Batch-скрипт сначала
+проверяет все восемь checkout: каждый должен существовать, быть чистым и точно
+совпадать с upstream. Только после общей preflight-проверки он обновляет root
+block, companion-контракт и GSD-конфиг. Коммиты и push остаются отдельным,
+проверяемым шагом по Git-политике каждого репозитория.
+
+Сгенерированный контракт закоммичен в consumer-репозитории, поэтому diff виден
+до публикации. Локальные инструкции остаются за служебными маркерами.
+Установщик не записывает корневой `AGENTS.md`, если тот превышает 32 КиБ.
 
 ## Первичная установка нового репо-потребителя
 
-```bash
+```sh
 git clone https://github.com/solid-stats/agent-instructions.git /tmp/agent-instructions
-sh /tmp/agent-instructions/scripts/install-bridge.sh --root .
+sh /tmp/agent-instructions/scripts/install-bridge.sh --root . --repository solid-stats/<repo>
 ```
 
 ## Разработка
 
 ```sh
 sh -n scripts/install-bridge.sh
+sh -n scripts/sync-consumers.sh
 sh tests/test-install-bridge.sh
-node scripts/sync-gsd-config.mjs <path-to-repo> --dry-run
+sh tests/test-sync-gsd-config.sh
+sh tests/test-sync-consumers.sh
+node tests/test-contract.mjs
+sh scripts/sync-consumers.sh --workspace-root .. --check
 ```
 
 ## Лицензия
